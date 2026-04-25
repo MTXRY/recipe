@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recipe Finder Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f8f9fa;
+            transition: 0.3s;
+        }
+
+        h2 {
+            font-weight: bold;
+        }
+
+        /* =====================
+           FLIP CARD BASE
+        ======================*/
+        .flip-card {
+            perspective: 1000px;
+            min-height: 320px;
+            cursor: pointer;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            min-height: 320px;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            width: 100%;
+            min-height: 320px;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .flip-card-front img {
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+            background: white;
+            padding: 10px;
+
+            /* FIX: NO CUT CONTENT */
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        /* =====================
+           FOCUS MODE (ZOOM)
+        ======================*/
+        body.focus-mode::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 998;
+        }
+
+        .flip-card.focused {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+        }
+
+        .flip-card.focused .flip-card-inner {
+            min-height: 85vh;
+        }
+
+        .flip-card.focused .flip-card-back {
+            overflow-y: auto;
+            max-height: 85vh;
+        }
+
+        /* Animation */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container mt-4">
+    <h2 class="text-center">🍳 Recipe Finder Pro</h2>
+
+    <!-- SEARCH -->
+    <input type="text" id="searchInput" class="form-control my-3" placeholder="Search recipe...">
+
+    <!-- RECIPES -->
+    <div id="recipeContainer" class="row"></div>
+
+    <!-- PAGINATION -->
+    <div class="d-flex justify-content-between mt-3">
+        <button class="btn btn-secondary" onclick="prevPage()">⬅ Prev</button>
+        <button class="btn btn-secondary" onclick="nextPage()">Next ➡</button>
+    </div>
+</div>
+ 
+
+<script>
+let recipes = [];
+let currentPage = 1;
+const itemsPerPage = 6;
+
+// LOAD DEFAULT
+document.addEventListener("DOMContentLoaded", () => {
+    fetch("https://www.themealdb.com/api/json/v1/1/search.php?s=chicken")
+        .then(res => res.json())
+        .then(data => {
+            recipes = data.meals || [];
+            displayRecipes(); 
+            
+            console.log(recipes);
+        });
+});
+
+// SEARCH
+document.getElementById("searchInput").addEventListener("input", function () {
+    fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${this.value}`)
+        .then(res => res.json())
+        .then(data => {
+            recipes = data.meals || [];
+            currentPage = 1;
+            displayRecipes();
+        });
+});
+
+// DISPLAY
+function displayRecipes() {
+    const container = document.getElementById("recipeContainer");
+    container.innerHTML = "";
+
+    const start = (currentPage - 1) * itemsPerPage;  
+    let check = currentPage - 1;
+    console.log("Current" + check);
+    const paginated = recipes.slice(start, start + itemsPerPage);  
+    let page = start + itemsPerPage;
+      console.log("this" + " " + page );
+ 
+    
+
+    paginated.forEach(meal => {
+        const col = document.createElement("div");
+        col.className = "col-md-4 mb-4 fade-in";
+
+        // ingredients
+        let ingredients = "";
+        for (let i = 1; i <= 8; i++) {
+            let ing = meal[`strIngredient${i}`];
+            if (ing && ing.trim() !== "") {
+                ingredients += `<li>${ing}</li>`;
+            }
+        }
+
+        col.innerHTML = `
+        <div class="flip-card" onclick="flipCard(this, event)">
+            <div class="flip-card-inner">
+
+                <!-- FRONT -->
+                <div class="flip-card-front card">
+                    <img src="${meal.strMealThumb}" class="card-img-top">
+                    <div class="card-body text-center">
+                        <h5>${meal.strMeal}</h5>
+                        <small class="text-muted">Click to flip</small>
+                    </div>
+                </div>
+
+                <!-- BACK -->
+                <div class="flip-card-back card">
+                    <h6>📃 Ingredients</h6>
+                    <ul>${ingredients}</ul>
+
+                    <h6>👨‍🍳 Instructions</h6>
+                    <p style="font-size: 13px;">
+                        ${meal.strInstructions}
+                    </p> 
+             
+                    </br> 
+                    <a href="${meal.strYoutube}" target="_blank" style="text-decoration:none">▶️YouTube🔴</a>
+                </div>
+
+            </div>
+        </div>
+        `;
+
+        container.appendChild(col);
+    });
+}
+
+// FLIP + FOCUS
+function flipCard(card, event) {
+    event.stopPropagation();
+
+    const isFocused = card.classList.contains("focused");
+
+    document.querySelectorAll(".flip-card").forEach(c => {
+        c.classList.remove("focused");
+        c.classList.remove("flipped");
+    });
+
+    document.body.classList.remove("focus-mode");
+
+    if (!isFocused) {
+        card.classList.add("flipped", "focused");
+        document.body.classList.add("focus-mode");
+    }
+}
+
+// CLOSE WHEN CLICK OUTSIDE
+document.body.addEventListener("click", () => {
+    document.querySelectorAll(".flip-card").forEach(c => {
+        c.classList.remove("focused", "flipped");
+    });
+    document.body.classList.remove("focus-mode");
+});
+
+// PAGINATION
+function nextPage() {
+    if (currentPage * itemsPerPage < recipes.length) {
+        currentPage++;
+        displayRecipes();
+    }
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        displayRecipes();
+    }
+}
+</script>
+
+</body>
+</html>

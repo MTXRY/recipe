@@ -1,0 +1,114 @@
+body {
+            background: #f8f9fa;
+            transition: 0.3s;
+        }
+ 
+
+        h2 {
+            font-weight: bold;
+        }
+ 
+
+        /* =====================
+           FLIP CARD BASE
+        ======================*/
+        .flip-card {
+            perspective: 1000px;
+            min-height: 320px;
+            cursor: pointer;
+        }
+ 
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            min-height: 320px;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+ 
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+ 
+
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            width: 100%;
+            min-height: 320px;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+ 
+
+        .flip-card-front img {
+            height: 200px;
+            object-fit: cover;
+        }
+ 
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+            background: white;
+            padding: 10px;
+ 
+
+            /* FIX: NO CUT CONTENT */
+            overflow-y: auto;
+            max-height: 100%;
+        }
+ 
+
+        /* =====================
+           FOCUS MODE (ZOOM)
+        ======================*/
+        body.focus-mode::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 998;
+        }
+ 
+
+        .flip-card.focused {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+ 
+
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+        }
+ 
+
+        .flip-card.focused .flip-card-inner {
+            min-height: 85vh;
+        }
+ 
+
+        .flip-card.focused .flip-card-back {
+            overflow-y: auto;
+            max-height: 85vh;
+        }
+ 
+
+        /* Animation */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in;
+        }
+ 
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
